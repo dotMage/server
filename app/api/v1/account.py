@@ -85,6 +85,7 @@ def account_init(
         created_at=now,
     )
     db.add(account)
+    db.flush()
 
     # Create first device
     raw_token, token_hash = generate_device_token()

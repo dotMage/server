@@ -2,12 +2,13 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.api.v1 import account, apps, audit, auth, devices, revisions
 from app.db.models import Account
-from app.db.session import SessionLocal, create_tables
+from app.db.session import create_tables, get_db
 
 
 @asynccontextmanager
@@ -28,11 +29,7 @@ app.include_router(audit.router, prefix="/api/v1")
 
 
 @app.get("/health")
-def health() -> dict:
-    db = SessionLocal()
-    try:
-        acct = db.execute(select(Account)).scalar_one_or_none()
-        exists = acct is not None
-    finally:
-        db.close()
+def health(db: Session = Depends(get_db)) -> dict:
+    acct = db.execute(select(Account)).scalar_one_or_none()
+    exists = acct is not None
     return {"status": "ok", "version": "0.1.0", "account_exists": exists}
