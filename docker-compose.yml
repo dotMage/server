@@ -10,6 +10,7 @@ services:
       DOTMAGE_LOG_LEVEL: "info"
     volumes:
       - dotmage-data:/data
+      - ./web/dist:/app/static:ro  # web admin (built by build.sh)
     ports:
       - "8000:8000"
     healthcheck:
