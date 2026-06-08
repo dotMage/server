@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.auth import generate_device_token, generate_refresh_token
 from app.core.config import settings
 from app.core.ratelimit import check_rate_limit
-from app.db.models import Account, AuditLog, Device
+from app.db.models import AuditLog, Device
 from app.db.session import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])

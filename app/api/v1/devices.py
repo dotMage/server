@@ -11,7 +11,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.auth import generate_enrollment_token, require_device_token
-from app.core.config import settings
 from app.db.models import AuditLog, Device
 from app.db.session import get_db
 

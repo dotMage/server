@@ -292,7 +292,6 @@ def test_device_list_and_revoke(bootstrapped_client):
     assert resp.status_code == 200
     devices = resp.json()["devices"]
     assert len(devices) == 1
-    device_id = devices[0]["id"]
     assert devices[0]["revoked"] is False
 
     # Create enrollment token
