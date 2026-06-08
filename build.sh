@@ -10,7 +10,7 @@ if [ -d "$WEB_DIR/.git" ]; then
 else
     echo "Cloning dotmage-web..."
     rm -rf "$WEB_DIR"
-    git clone --depth 1 git@github.com:dotMage/dotmage-web.git "$WEB_DIR"
+    git clone --depth 1 https://github.com/dotMage/dotmage-web.git "$WEB_DIR"
 fi
 
 # 2. Build web admin inside Docker (no Node.js needed on host)
