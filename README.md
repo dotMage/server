@@ -31,7 +31,7 @@ docker-compose logs server | grep "bootstrap secret"
 
 ### Connect your first device
 
-Download `dmage` from [releases](https://github.com/dotMage/dotmage-cli/releases), then:
+Download `dmage` from [releases](https://github.com/dotMage/dotmage/releases), then:
 
 ```bash
 dmage auth --server http://your-server:8000

@@ -88,7 +88,7 @@ fi
 printf "\n"
 printf "  -- Next steps --\n"
 printf "\n"
-printf "  1. Download CLI:  https://github.com/dotMage/dotmage-cli/releases\n"
+printf "  1. Download CLI:  https://github.com/dotMage/dotmage/releases\n"
 printf "  2. Authenticate:  dmage auth --server %s\n" "$API_URL"
 printf "  3. Push secrets:  cd your-project && dmage init myapp\n"
 printf "  4. Admin panel:   %s\n" "$WEB_URL"
