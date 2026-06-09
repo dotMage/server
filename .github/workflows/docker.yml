@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  repository_dispatch:
+    types: [web-updated]
 
 permissions:
   contents: read
