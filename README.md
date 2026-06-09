@@ -1,11 +1,11 @@
-# dotmage-server
+# server
 
 Self-hosted, E2E-encrypted `.env` secret manager. The server stores only encrypted blobs — it **never** sees plaintext secrets.
 
 ## Deploy (one command)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dotMage/dotmage-server/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dotMage/server/main/install.sh | bash
 ```
 
 That's it. Downloads the Docker image, creates `docker-compose.yml`, starts the server on port 8000, prints the bootstrap secret.
@@ -15,8 +15,8 @@ Requires only Docker. No git, no Node.js, no Python, no Rust.
 ### Alternative: build from source
 
 ```bash
-git clone https://github.com/dotMage/dotmage-server.git
-cd dotmage-server
+git clone https://github.com/dotMage/server.git
+cd server
 ./build.sh
 ```
 

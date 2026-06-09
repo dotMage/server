@@ -17,12 +17,12 @@ echo "Using: $DC"
 
 # 1. Clone or update web admin
 if [ -d "$WEB_DIR/.git" ]; then
-    echo "Updating dotmage-web..."
+    echo "Updating web..."
     git -C "$WEB_DIR" pull --ff-only
 else
-    echo "Cloning dotmage-web..."
+    echo "Cloning web..."
     rm -rf "$WEB_DIR"
-    git clone --depth 1 https://github.com/dotMage/dotmage-web.git "$WEB_DIR"
+    git clone --depth 1 https://github.com/dotMage/web.git "$WEB_DIR"
 fi
 
 # 2. Build web admin inside Docker (no Node.js needed on host)

@@ -28,5 +28,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/dotmage/dotmage-server:latest
-            ghcr.io/dotmage/dotmage-server:${{ github.sha }}
+            ghcr.io/dotmage/server:latest
+            ghcr.io/dotmage/server:${{ github.sha }}
