@@ -7,7 +7,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import JSONResponse
 
-from src.api.v1.auth.views import DeviceRegisterRequest, RefreshRequest
+from src.api.v1.auth.views import (
+    DeviceRegisterBootstrapRequest,
+    DeviceRegisterRequest,
+    RefreshRequest,
+)
 from src.core.ratelimit import check_rate_limit
 from src.core.services.auth_service import AuthService, get_auth_service
 
@@ -35,3 +39,16 @@ def auth_refresh(
     """Rotate device and refresh tokens."""
     result = service.refresh_token(body.refresh_token)
     return JSONResponse(status_code=200, content=result)
+
+
+@router.post("/device-register")
+def auth_device_register_bootstrap(
+    body: DeviceRegisterBootstrapRequest,
+    service: Annotated[AuthService, Depends(get_auth_service)],
+    _rl: None = Depends(check_rate_limit),
+) -> JSONResponse:
+    """Register a new device using the bootstrap secret."""
+    result = service.register_device_with_bootstrap(
+        body.bootstrap_secret, body.device_name,
+    )
+    return JSONResponse(status_code=201, content=result)

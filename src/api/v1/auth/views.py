@@ -11,3 +11,8 @@ class DeviceRegisterRequest(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class DeviceRegisterBootstrapRequest(BaseModel):
+    bootstrap_secret: str
+    device_name: str = "cli"

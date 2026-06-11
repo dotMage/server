@@ -164,6 +164,11 @@ class DeviceNotFoundError(DotMageError):
     message = "Device not found"
 
 
+class DeviceScopeError(DotMageError):
+    status_code = 403
+    message = "This token is scoped to a different app/environment"
+
+
 # --- Rate limit ---
 
 

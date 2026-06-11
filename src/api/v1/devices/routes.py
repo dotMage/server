@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies.auth import require_device_token
-from src.api.v1.devices.views import EnrollTokenRequest
+from src.api.v1.devices.views import CiTokenRequest, EnrollTokenRequest
 from src.core.services.device_service import DeviceService, get_device_service
 from src.models.base import Device
 
@@ -40,4 +40,15 @@ def devices_enroll_token(
     device: Device = Depends(require_device_token),
 ) -> JSONResponse:
     result = service.create_enroll_token(device, body.name, body.ttl, body.kind)
+    return JSONResponse(status_code=201, content=result)
+
+
+@router.post("/ci-token")
+def devices_ci_token(
+    body: CiTokenRequest,
+    service: Annotated[DeviceService, Depends(get_device_service)],
+    device: Device = Depends(require_device_token),
+) -> JSONResponse:
+    """Create a scoped CI token for a specific app+env."""
+    result = service.create_ci_token(device, body.app, body.env, body.ttl)
     return JSONResponse(status_code=201, content=result)

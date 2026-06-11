@@ -10,12 +10,17 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from src.core.auth.exceptions import DeviceNotFoundError
-from src.core.auth.tokens import generate_enrollment_token
+from src.core.auth.tokens import (
+    generate_device_token,
+    generate_enrollment_token,
+    generate_refresh_token,
+)
 from src.core.db.connection import get_session
 from src.core.db.repository.audit_repo import AuditRepository, get_audit_repository
 from src.core.db.repository.device_repo import DeviceRepository, get_device_repository
 from src.enums.audit import AuditAction
 from src.models.base import Device
+from src.settings import Settings, get_settings
 
 
 def _parse_ttl(value: str) -> int:
@@ -33,10 +38,12 @@ class DeviceService:
         session: Session,
         device_repo: DeviceRepository,
         audit_repo: AuditRepository,
+        settings: Settings,
     ) -> None:
         self.session = session
         self.device_repo = device_repo
         self.audit_repo = audit_repo
+        self.settings = settings
 
     def list_devices(self, device: Device) -> dict:
         devices = self.device_repo.list_by_account(device.account_id)
@@ -49,6 +56,8 @@ class DeviceService:
                     "expires_at": d.token_expires_at.isoformat() + "Z",
                     "revoked": d.revoked_at is not None,
                     "created_at": d.created_at.isoformat() + "Z",
+                    "allowed_app": d.allowed_app,
+                    "allowed_env": d.allowed_env,
                 }
                 for d in devices
             ]
@@ -102,9 +111,48 @@ class DeviceService:
         }
 
 
+    def create_ci_token(
+        self, device: Device, app: str, env: str, ttl: str,
+    ) -> dict:
+        """Create a scoped CI device token restricted to a specific app+env."""
+        ttl_secs = _parse_ttl(ttl)
+        now = datetime.now(timezone.utc)
+
+        raw_token, token_hash = generate_device_token()
+        raw_refresh, refresh_hash = generate_refresh_token()
+
+        ci_device = Device(
+            account_id=device.account_id,
+            name=f"ci:{app}/{env}",
+            token_hash=token_hash,
+            refresh_hash=refresh_hash,
+            token_expires_at=now + timedelta(seconds=ttl_secs),
+            created_at=now,
+            last_seen_at=now,
+            allowed_app=app,
+            allowed_env=env,
+        )
+        self.device_repo.create(ci_device)
+
+        self.audit_repo.log(
+            AuditAction.ENROLL_TOKEN_ISSUED, device.account_id, device.id,
+            created_at=now,
+            meta=f'{{"name": "ci:{app}/{env}", "kind": "ci", "app": "{app}", "env": "{env}"}}',
+        )
+        self.session.commit()
+
+        return {
+            "device_token": raw_token,
+            "refresh_token": raw_refresh,
+            "device_id": ci_device.id,
+            "expires_at": ci_device.token_expires_at.isoformat() + "Z",
+        }
+
+
 def get_device_service(
     session: Annotated[Session, Depends(get_session)],
     device_repo: Annotated[DeviceRepository, Depends(get_device_repository)],
     audit_repo: Annotated[AuditRepository, Depends(get_audit_repository)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> DeviceService:
-    return DeviceService(session, device_repo, audit_repo)
+    return DeviceService(session, device_repo, audit_repo, settings)

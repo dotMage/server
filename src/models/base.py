@@ -139,6 +139,8 @@ class Device(Base):
     )
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    allowed_app: Mapped[str | None] = mapped_column(Text, nullable=True)
+    allowed_env: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     account: Mapped[Account] = relationship(back_populates="devices")
     revisions: Mapped[list[Revision]] = relationship(back_populates="device")

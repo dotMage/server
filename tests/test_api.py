@@ -329,6 +329,91 @@ def test_device_list_and_revoke(bootstrapped_client):
     assert resp.status_code == 401
 
 
+# --- Bootstrap device registration ---
+
+
+def test_device_register_bootstrap_success(bootstrapped_client):
+    client, token, _ = bootstrapped_client
+    resp = client.post("/api/v1/auth/device-register", json={
+        "bootstrap_secret": "test-bootstrap-secret",
+        "device_name": "device-2",
+    })
+    assert resp.status_code == 201
+    data = resp.json()
+    assert "device_token" in data
+    assert "refresh_token" in data
+    assert "device_id" in data
+    # Verify the new token works
+    r = client.get("/api/v1/apps", headers=auth_header(data["device_token"]))
+    assert r.status_code == 200
+
+
+def test_device_register_bootstrap_wrong_secret(bootstrapped_client):
+    client, _, _ = bootstrapped_client
+    resp = client.post("/api/v1/auth/device-register", json={
+        "bootstrap_secret": "wrong-secret",
+        "device_name": "bad",
+    })
+    assert resp.status_code == 403
+
+
+def test_device_register_bootstrap_no_account(client):
+    resp = client.post("/api/v1/auth/device-register", json={
+        "bootstrap_secret": "test-bootstrap-secret",
+        "device_name": "bad",
+    })
+    assert resp.status_code == 404
+
+
+# --- Scoped CI tokens ---
+
+
+def test_ci_token_scoped(bootstrapped_client):
+    client, token, _ = bootstrapped_client
+    h = auth_header(token)
+
+    # Create app + env
+    client.post("/api/v1/apps", headers=h, json={"name": "webapp"})
+    client.post("/api/v1/apps/webapp/envs", headers=h, json={"name": "prod"})
+    client.post(
+        "/api/v1/apps/webapp/envs/prod/revisions", headers=h,
+        json={"blob": "v1:bm9uY2U=:Y2lwaGVy", "parent_rev": 0},
+    )
+
+    # Create another app
+    client.post("/api/v1/apps", headers=h, json={"name": "other"})
+    client.post("/api/v1/apps/other/envs", headers=h, json={"name": "dev"})
+    client.post(
+        "/api/v1/apps/other/envs/dev/revisions", headers=h,
+        json={"blob": "v1:bm9uY2U=:c2VjcmV0", "parent_rev": 0},
+    )
+
+    # Generate CI token scoped to webapp/prod
+    resp = client.post("/api/v1/devices/ci-token", headers=h, json={
+        "app": "webapp", "env": "prod", "ttl": "1h",
+    })
+    assert resp.status_code == 201
+    ci_token = resp.json()["device_token"]
+    ci_h = auth_header(ci_token)
+
+    # CI token CAN pull webapp/prod
+    r = client.get("/api/v1/apps/webapp/envs/prod/revisions/last", headers=ci_h)
+    assert r.status_code == 200
+
+    # CI token CANNOT pull other/dev
+    r = client.get("/api/v1/apps/other/envs/dev/revisions/last", headers=ci_h)
+    assert r.status_code == 403
+
+    # CI token CANNOT pull webapp/dev (wrong env)
+    client.post("/api/v1/apps/webapp/envs", headers=h, json={"name": "dev"})
+    client.post(
+        "/api/v1/apps/webapp/envs/dev/revisions", headers=h,
+        json={"blob": "v1:bm9uY2U=:ZGV2", "parent_rev": 0},
+    )
+    r = client.get("/api/v1/apps/webapp/envs/dev/revisions/last", headers=ci_h)
+    assert r.status_code == 403
+
+
 # --- Audit ---
 
 

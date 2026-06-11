@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from src.api.dependencies.auth import require_device_token
+from src.api.dependencies.auth import check_device_scope, require_device_token
 from src.api.v1.revisions.views import PushRequest, RollbackRequest
 from src.core.services.revision_service import RevisionService, get_revision_service
 from src.models.base import Device
@@ -23,6 +23,7 @@ def revision_push(
     service: Annotated[RevisionService, Depends(get_revision_service)],
     device: Device = Depends(require_device_token),
 ) -> JSONResponse:
+    check_device_scope(device, name, env)
     result = service.push(
         device, name, env,
         blob=body.blob, content_hash=body.content_hash, parent_rev=body.parent_rev,
@@ -38,6 +39,7 @@ def revision_get(
     service: Annotated[RevisionService, Depends(get_revision_service)],
     device: Device = Depends(require_device_token),
 ) -> JSONResponse:
+    check_device_scope(device, name, env)
     result = service.get_revision(device, name, env, rev)
     return JSONResponse(status_code=200, content=result)
 
@@ -49,6 +51,7 @@ def revisions_list(
     service: Annotated[RevisionService, Depends(get_revision_service)],
     device: Device = Depends(require_device_token),
 ) -> JSONResponse:
+    check_device_scope(device, name, env)
     result = service.list_revisions(device, name, env)
     return JSONResponse(status_code=200, content=result)
 
@@ -61,5 +64,6 @@ def rollback(
     service: Annotated[RevisionService, Depends(get_revision_service)],
     device: Device = Depends(require_device_token),
 ) -> JSONResponse:
+    check_device_scope(device, name, env)
     result = service.rollback(device, name, env, body.to_rev)
     return JSONResponse(status_code=201, content=result)

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from src.core.auth.exceptions import (
     DeviceRevokedError,
+    DeviceScopeError,
     InvalidTokenError,
     NotAuthenticatedError,
     TokenExpiredError,
@@ -89,3 +90,11 @@ def optional_token(
     device.last_seen_at = now
     session.commit()
     return device
+
+
+def check_device_scope(device: Device, app_name: str, env_name: str | None = None) -> None:
+    """Raise DeviceScopeError if device is scoped and doesn't match the request."""
+    if device.allowed_app is not None and device.allowed_app != app_name:
+        raise DeviceScopeError()
+    if device.allowed_env is not None and env_name is not None and device.allowed_env != env_name:
+        raise DeviceScopeError()
