@@ -15,7 +15,7 @@ from src.models.base import Device
 router = APIRouter(prefix="/apps", tags=["revisions"])
 
 
-@router.post("/{name}/envs/{env}/revisions")
+@router.post("/{name:path}/envs/{env}/revisions")
 def revision_push(
     name: str,
     env: str,
@@ -31,7 +31,7 @@ def revision_push(
     return JSONResponse(status_code=201, content=result)
 
 
-@router.get("/{name}/envs/{env}/revisions/{rev}")
+@router.get("/{name:path}/envs/{env}/revisions/{rev}")
 def revision_get(
     name: str,
     env: str,
@@ -44,7 +44,7 @@ def revision_get(
     return JSONResponse(status_code=200, content=result)
 
 
-@router.get("/{name}/envs/{env}/revisions")
+@router.get("/{name:path}/envs/{env}/revisions")
 def revisions_list(
     name: str,
     env: str,
@@ -56,7 +56,7 @@ def revisions_list(
     return JSONResponse(status_code=200, content=result)
 
 
-@router.post("/{name}/envs/{env}/rollback")
+@router.post("/{name:path}/envs/{env}/rollback")
 def rollback(
     name: str,
     env: str,

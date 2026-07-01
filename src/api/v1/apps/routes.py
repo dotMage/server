@@ -33,7 +33,7 @@ def apps_create(
     return JSONResponse(status_code=201, content=result)
 
 
-@router.get("/{name}/envs")
+@router.get("/{name:path}/envs")
 def envs_list(
     name: str,
     service: Annotated[AppService, Depends(get_app_service)],
@@ -42,7 +42,7 @@ def envs_list(
     return JSONResponse(status_code=200, content=service.list_envs(device, name))
 
 
-@router.post("/{name}/envs")
+@router.post("/{name:path}/envs")
 def envs_create(
     name: str,
     body: CreateEnvRequest,
@@ -53,7 +53,7 @@ def envs_create(
     return JSONResponse(status_code=201, content=result)
 
 
-@router.delete("/{name}/envs/{env}")
+@router.delete("/{name:path}/envs/{env}")
 def envs_delete(
     name: str,
     env: str,
