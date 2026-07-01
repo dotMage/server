@@ -18,8 +18,8 @@ from src.settings import _auto_generate_bootstrap, get_settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _auto_generate_bootstrap()
     create_db_connection(app)
+    _auto_generate_bootstrap(session_factory=app.state.session_factory)
     yield
     shutdown_db_connection(app)
 

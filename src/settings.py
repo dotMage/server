@@ -67,14 +67,35 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def _auto_generate_bootstrap() -> None:
-    """Auto-generate bootstrap secret if not provided (called once at startup)."""
+def _auto_generate_bootstrap(session_factory=None) -> None:
+    """Auto-generate bootstrap secret if not provided and no account exists yet."""
     settings = get_settings()
-    if not settings.BOOTSTRAP_SECRET:
-        alphabet = string.ascii_letters + string.digits
-        generated = "".join(secrets.choice(alphabet) for _ in range(12))
-        settings.BOOTSTRAP_SECRET = generated
-        print(
-            f"[dotMage] Generated bootstrap secret: {generated}",
-            file=sys.stderr,
-        )
+    if settings.BOOTSTRAP_SECRET:
+        return
+
+    # If DB is available, check whether an account already exists.
+    # If it does, the bootstrap secret is already stored as a hash in the DB
+    # and generating a new one would only confuse the user.
+    if session_factory is not None:
+        from sqlalchemy import select
+
+        from src.models.base import Account
+
+        session = session_factory()
+        try:
+            account = session.execute(select(Account)).scalar_one_or_none()
+        finally:
+            session.close()
+        if account is not None:
+            # Account exists — bootstrap secret is baked into the DB hash.
+            # Set a placeholder so the server doesn't crash, but don't print it.
+            settings.BOOTSTRAP_SECRET = "__account_exists__"
+            return
+
+    alphabet = string.ascii_letters + string.digits
+    generated = "".join(secrets.choice(alphabet) for _ in range(12))
+    settings.BOOTSTRAP_SECRET = generated
+    print(
+        f"[dotMage] Generated bootstrap secret: {generated}",
+        file=sys.stderr,
+    )
