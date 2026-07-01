@@ -33,6 +33,10 @@ class AppRepository:
         self.session.flush()
         return app
 
+    def delete(self, app: App) -> None:
+        self.session.delete(app)
+        self.session.flush()
+
 
 def get_app_repository(
     session: Annotated[Session, Depends(get_session)],

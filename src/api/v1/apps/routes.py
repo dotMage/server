@@ -62,3 +62,13 @@ def envs_delete(
 ) -> JSONResponse:
     result = service.delete_env(device, name, env)
     return JSONResponse(status_code=200, content=result)
+
+
+@router.delete("/{name:path}")
+def apps_delete(
+    name: str,
+    service: Annotated[AppService, Depends(get_app_service)],
+    device: Device = Depends(require_device_token),
+) -> JSONResponse:
+    result = service.delete_app(device, name)
+    return JSONResponse(status_code=200, content=result)

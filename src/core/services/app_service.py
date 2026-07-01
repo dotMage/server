@@ -166,6 +166,22 @@ class AppService:
             "updated_at": env.updated_at.isoformat() + "Z",
         }
 
+    def delete_app(self, device: Device, name: str) -> dict:
+        app = self.app_repo.get_by_account_and_name(device.account_id, name)
+        if app is None:
+            raise AppNotFoundError(name)
+
+        now = datetime.now(timezone.utc)
+        self.audit_repo.log(
+            AuditAction.APP_DELETED, device.account_id, device.id,
+            app_name=name, created_at=now,
+        )
+
+        self.app_repo.delete(app)
+        self.session.commit()
+
+        return {"ok": True}
+
     def delete_env(self, device: Device, app_name: str, env_name: str) -> dict:
         app = self.app_repo.get_by_account_and_name(device.account_id, app_name)
         if app is None:

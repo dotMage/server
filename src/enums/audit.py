@@ -7,6 +7,7 @@ class AuditAction:
     ACCOUNT_INIT = "account.init"
     ACCOUNT_KEYS_UPDATED = "account.keys_updated"
     APP_CREATED = "app.created"
+    APP_DELETED = "app.deleted"
     ENV_CREATED = "env.created"
     ENV_DELETED = "env.deleted"
     PUSH = "push"

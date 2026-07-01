@@ -132,6 +132,29 @@ def test_app_crud(bootstrapped_client):
     assert apps[0]["name"] == "myapp"
 
 
+def test_app_delete(bootstrapped_client):
+    client, token, _ = bootstrapped_client
+    h = auth_header(token)
+
+    # Create app with env
+    client.post("/api/v1/apps", headers=h, json={"name": "delapp"})
+    client.post("/api/v1/apps/delapp/envs", headers=h, json={"name": "dev"})
+
+    # Delete
+    resp = client.delete("/api/v1/apps/delapp", headers=h)
+    assert resp.status_code == 200
+    assert resp.json()["ok"] is True
+
+    # Verify gone
+    resp = client.get("/api/v1/apps", headers=h)
+    names = [a["name"] for a in resp.json()["apps"]]
+    assert "delapp" not in names
+
+    # Delete non-existent -> 404
+    resp = client.delete("/api/v1/apps/nope", headers=h)
+    assert resp.status_code == 404
+
+
 # --- Environments ---
 
 
