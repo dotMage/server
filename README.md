@@ -129,6 +129,12 @@ pytest tests/ -v
 ruff check src/ tests/
 ```
 
+## Contributing
+
+Every user-visible change updates `CHANGELOG.md` under `[Unreleased]` in the same PR —
+entries are written for users, not committers. API contract changes go through
+[dotmage-spec](https://github.com/dotMage/dotmage-spec) first.
+
 ## License
 
 AGPL-3.0 — see [LICENSE](LICENSE).
