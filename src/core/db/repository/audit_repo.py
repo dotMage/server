@@ -27,6 +27,7 @@ class AuditRepository:
         rev_number: int | None = None,
         meta: str | None = None,
         created_at: object | None = None,
+        user_id: str | None = None,
     ) -> AuditLog:
         from datetime import datetime, timezone
 
@@ -39,6 +40,7 @@ class AuditRepository:
             rev_number=rev_number,
             meta=meta,
             created_at=created_at or datetime.now(timezone.utc),
+            user_id=user_id,
         )
         self.session.add(entry)
         self.session.flush()

@@ -16,6 +16,8 @@ class AuditAction:
     DEVICE_REGISTERED = "device.registered"
     DEVICE_REVOKED = "device.revoked"
     ENROLL_TOKEN_ISSUED = "enroll_token.issued"
+    USER_INVITED = "user.invited"
+    USER_JOINED = "user.joined"
     ROTATE_BEGIN = "rotate.begin"
     ROTATE_BLOB = "rotate.blob"
     ROTATE_COMPLETE = "rotate.complete"

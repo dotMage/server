@@ -196,6 +196,31 @@ class DeviceScopeError(DotMageError):
     message = "This token is scoped to a different app/environment"
 
 
+# --- Team (spec K/B.9) ---
+
+
+class TeamModeRequiredError(DotMageError):
+    status_code = 404
+    message = "Not found"  # solo servers do not reveal team endpoints
+
+
+class NotAnOwnerError(DotMageError):
+    status_code = 403
+    message = "This action requires the owner role"
+
+
+class UserExistsError(DotMageError):
+    status_code = 409
+
+    def __init__(self, name: str) -> None:
+        self.message = f"User '{name}' already exists"
+
+
+class InvitationInvalidError(DotMageError):
+    status_code = 404
+    message = "Invitation not found, expired or already used"
+
+
 # --- Rate limit ---
 
 
