@@ -8,6 +8,12 @@ The API contract is versioned by URL (`/api/v1`) — breaking it requires `/api/
 ## [Unreleased]
 
 ### Added
+- AK rotation (spec L): key generations per blob, `rotate/begin|status|complete`,
+  rotation-gated blob replacement; pushes are refused mid-rotation with a clear 409.
+- Team-of-one user model (spec E.9): `users`/`invitations` tables, automatic migration
+  of existing accounts (owner user backfilled, devices linked), `GET /whoami`,
+  `DOTMAGE_MODE=solo|team` (default solo — team endpoints hidden).
+- Startup schema migrator: additive `ALTER TABLE` for new columns (no alembic needed).
 
 ### Changed
 
