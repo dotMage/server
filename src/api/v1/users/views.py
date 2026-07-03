@@ -33,3 +33,7 @@ class CompleteRequest(BaseModel):
     salt_rc: str | None = None
     nonce_rc: str | None = None
     wrapped_ak_rc: str | None = None
+
+
+class PatchUserRequest(BaseModel):
+    role: str

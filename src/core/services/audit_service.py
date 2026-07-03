@@ -28,11 +28,13 @@ class AuditService:
             env_name=env_name,
             limit=limit,
         )
+        names = self.audit_repo.user_names(device.account_id)
         return {
             "events": [
                 {
                     "id": e.id,
                     "device_id": e.device_id,
+                    "user": names.get(e.user_id) if e.user_id else None,
                     "action": e.action,
                     "app_name": e.app_name,
                     "env_name": e.env_name,

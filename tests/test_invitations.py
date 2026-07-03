@@ -154,3 +154,156 @@ def test_expired_invitation_is_rejected(bootstrapped_client, team_mode):
         json={"invitation_id": inv_id, "redeem_secret": "rrr"},
     )
     assert r.status_code == 404
+
+
+def _join_as_editor(client, token, name="vera", secret="sv"):
+    inv_id = _invite(client, token, name=name, redeem_secret=secret).json()["invitation_id"]
+    r = client.post(
+        "/api/v1/invitations/complete",
+        json={"invitation_id": inv_id, "redeem_secret": secret, **COMPLETE_KEYS},
+    )
+    return r.json()
+
+
+def test_viewer_is_read_only(bootstrapped_client, team_mode):
+    client, token, _ = bootstrapped_client
+    client.post("/api/v1/apps", json={"name": "a"}, headers=_auth(token))
+    client.post("/api/v1/apps/a/envs", json={"name": "dev"}, headers=_auth(token))
+    client.post(
+        "/api/v1/apps/a/envs/dev/revisions",
+        json={"blob": "v1:eA==:eQ==", "content_hash": None, "parent_rev": 0},
+        headers=_auth(token),
+    )
+
+    inv_id = _invite(client, token, name="ro", role="viewer", redeem_secret="sv").json()[
+        "invitation_id"
+    ]
+    viewer = client.post(
+        "/api/v1/invitations/complete",
+        json={"invitation_id": inv_id, "redeem_secret": "sv", **COMPLETE_KEYS},
+    ).json()
+    vt = viewer["device_token"]
+
+    # reads work
+    assert (
+        client.get("/api/v1/apps/a/envs/dev/revisions/last", headers=_auth(vt)).status_code
+        == 200
+    )
+    # writes forbidden
+    assert (
+        client.post(
+            "/api/v1/apps/a/envs/dev/revisions",
+            json={"blob": "v1:eA==:eQ==", "content_hash": None, "parent_rev": 1},
+            headers=_auth(vt),
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post("/api/v1/apps", json={"name": "b"}, headers=_auth(vt)).status_code
+        == 403
+    )
+
+
+def test_editor_writes_but_cannot_delete_or_rotate(bootstrapped_client, team_mode):
+    client, token, _ = bootstrapped_client
+    client.post("/api/v1/apps", json={"name": "a"}, headers=_auth(token))
+    client.post("/api/v1/apps/a/envs", json={"name": "dev"}, headers=_auth(token))
+
+    editor = _join_as_editor(client, token)
+    et = editor["device_token"]
+
+    # push allowed
+    assert (
+        client.post(
+            "/api/v1/apps/a/envs/dev/revisions",
+            json={"blob": "v1:eA==:eQ==", "content_hash": None, "parent_rev": 0},
+            headers=_auth(et),
+        ).status_code
+        == 201
+    )
+    # deletes / rotation are owner-only
+    assert client.delete("/api/v1/apps/a", headers=_auth(et)).status_code == 403
+    assert (
+        client.post(
+            "/api/v1/account/rotate/begin",
+            json={"new_key_gen": 2, "nonce_ak": "bg==", "wrapped_ak": "dw=="},
+            headers=_auth(et),
+        ).status_code
+        == 403
+    )
+
+
+def test_role_change_and_last_owner_protection(bootstrapped_client, team_mode):
+    client, token, _ = bootstrapped_client
+    editor = _join_as_editor(client, token)
+    editor_user_id = editor["user_id"]
+
+    # promote editor to owner
+    r = client.patch(
+        f"/api/v1/users/{editor_user_id}",
+        json={"role": "owner"},
+        headers=_auth(token),
+    )
+    assert r.status_code == 200
+    # find owner's own user id
+    users = client.get("/api/v1/users", headers=_auth(token)).json()["users"]
+    owner_id = next(u["id"] for u in users if u["name"] == "owner")
+    # demote original owner: allowed now (another owner exists)
+    assert (
+        client.patch(
+            f"/api/v1/users/{owner_id}", json={"role": "viewer"}, headers=_auth(token)
+        ).status_code
+        == 200
+    )
+    # vera is the last owner — demoting her is refused
+    assert (
+        client.patch(
+            f"/api/v1/users/{editor_user_id}",
+            json={"role": "editor"},
+            headers=_auth(editor["device_token"]),
+        ).status_code
+        == 409
+    )
+
+
+def test_user_removal_revokes_devices_and_wraps(bootstrapped_client, team_mode):
+    client, token, _ = bootstrapped_client
+    editor = _join_as_editor(client, token)
+    et, uid = editor["device_token"], editor["user_id"]
+
+    r = client.delete(f"/api/v1/users/{uid}", headers=_auth(token))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["devices_revoked"] == 1
+    assert body["rotation_required"] is True
+
+    # removed user's device token is dead
+    assert client.get("/api/v1/whoami", headers=_auth(et)).status_code == 401
+    # wraps are gone from the roster
+    users = client.get("/api/v1/users", headers=_auth(token)).json()["users"]
+    vera = next(u for u in users if u["name"] == "vera")
+    assert vera["status"] == "removed"
+
+    # last-owner removal refused
+    owner_id = next(u["id"] for u in users if u["name"] == "owner")
+    assert (
+        client.delete(f"/api/v1/users/{owner_id}", headers=_auth(token)).status_code
+        == 409
+    )
+
+
+def test_audit_reports_user_names(bootstrapped_client, team_mode):
+    client, token, _ = bootstrapped_client
+    client.post("/api/v1/apps", json={"name": "a"}, headers=_auth(token))
+    client.post("/api/v1/apps/a/envs", json={"name": "dev"}, headers=_auth(token))
+    editor = _join_as_editor(client, token)
+    client.post(
+        "/api/v1/apps/a/envs/dev/revisions",
+        json={"blob": "v1:eA==:eQ==", "content_hash": None, "parent_rev": 0},
+        headers=_auth(editor["device_token"]),
+    )
+    events = client.get("/api/v1/audit", headers=_auth(token)).json()["events"]
+    push = next(e for e in events if e["action"] == "push")
+    assert push["user"] == "vera"
+    created = next(e for e in events if e["action"] == "app.created")
+    assert created["user"] == "owner"

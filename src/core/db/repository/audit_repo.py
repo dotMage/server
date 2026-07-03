@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.core.db.connection import get_session
-from src.models.base import AuditLog
+from src.models.base import AuditLog, Device, User
 
 
 class AuditRepository:
@@ -30,6 +30,12 @@ class AuditRepository:
         user_id: str | None = None,
     ) -> AuditLog:
         from datetime import datetime, timezone
+
+        # Team mode (spec E.9): attribute the acting user. The device is in the
+        # session identity map already (loaded by require_device_token).
+        if user_id is None and device_id is not None:
+            device = self.session.get(Device, device_id)
+            user_id = device.user_id if device is not None else None
 
         entry = AuditLog(
             account_id=account_id,
@@ -65,6 +71,13 @@ class AuditRepository:
             query = query.where(AuditLog.env_name == env_name)
         query = query.limit(limit)
         return list(self.session.execute(query).scalars().all())
+
+
+    def user_names(self, account_id: str) -> dict[str, str]:
+        rows = self.session.execute(
+            select(User.id, User.name).where(User.account_id == account_id)
+        ).all()
+        return {uid: name for uid, name in rows}
 
 
 def get_audit_repository(

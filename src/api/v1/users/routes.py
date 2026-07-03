@@ -11,8 +11,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from src.api.dependencies.auth import require_device_token
-from src.api.v1.users.views import CompleteRequest, InviteRequest, RedeemRequest
+from src.api.dependencies.auth import require_device_token, require_owner
+from src.api.v1.users.views import (
+    CompleteRequest,
+    InviteRequest,
+    PatchUserRequest,
+    RedeemRequest,
+)
 from src.core.auth.exceptions import TeamModeRequiredError
 from src.core.db.repository.user_repo import UserRepository, get_user_repository
 from src.core.ratelimit import check_rate_limit
@@ -87,3 +92,30 @@ def invitations_complete(
     service: Annotated[UserService, Depends(get_user_service)],
 ) -> JSONResponse:
     return JSONResponse(status_code=201, content=service.complete(body))
+
+
+@router.patch(
+    "/users/{user_id}",
+    dependencies=[Depends(require_team_mode), Depends(require_owner)],
+)
+def users_patch(
+    user_id: str,
+    body: PatchUserRequest,
+    service: Annotated[UserService, Depends(get_user_service)],
+    device: Device = Depends(require_device_token),
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=200, content=service.change_role(device, user_id, body.role)
+    )
+
+
+@router.delete(
+    "/users/{user_id}",
+    dependencies=[Depends(require_team_mode), Depends(require_owner)],
+)
+def users_delete(
+    user_id: str,
+    service: Annotated[UserService, Depends(get_user_service)],
+    device: Device = Depends(require_device_token),
+) -> JSONResponse:
+    return JSONResponse(status_code=200, content=service.remove_user(device, user_id))

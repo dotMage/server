@@ -11,9 +11,11 @@ from sqlalchemy.orm import Session
 from src.core.auth.exceptions import (
     AccountNotFoundError,
     InvitationInvalidError,
+    LastOwnerError,
     NotAnOwnerError,
     RotationInProgressError,
     UserExistsError,
+    UserNotFoundError,
 )
 from src.core.auth.tokens import generate_device_token, generate_refresh_token, sha256_hash
 from src.core.db.connection import get_session
@@ -246,6 +248,73 @@ class UserService:
             "device_token": raw_token,
             "refresh_token": raw_refresh,
             "expires_at": device.token_expires_at.isoformat() + "Z",
+        }
+
+
+    def _other_active_owner_exists(self, account_id: str, user_id: str) -> bool:
+        return any(
+            u.role == "owner" and u.status == "active" and u.id != user_id
+            for u in self.user_repo.list_by_account(account_id)
+        )
+
+    def change_role(self, device: Device, user_id: str, role: str) -> dict:
+        account = self._account()
+        target = self.user_repo.get_by_id(user_id)
+        if target is None or target.account_id != account.id:
+            raise UserNotFoundError()
+        if (
+            target.role == "owner"
+            and role != "owner"
+            and not self._other_active_owner_exists(account.id, target.id)
+        ):
+            raise LastOwnerError()
+        target.role = role
+        now = datetime.now(timezone.utc)
+        self.audit_repo.log(
+            AuditAction.USER_ROLE_CHANGED, account.id, device.id,
+            created_at=now, meta=f'{{"name": "{target.name}", "role": "{role}"}}',
+        )
+        self.session.commit()
+        return {"id": target.id, "name": target.name, "role": target.role}
+
+    def remove_user(self, device: Device, user_id: str) -> dict:
+        """Offboarding (spec K.5 / Phase 5): drop wraps, revoke devices.
+        The caller is told to rotate the key — removal alone is not enough."""
+        account = self._account()
+        target = self.user_repo.get_by_id(user_id)
+        if target is None or target.account_id != account.id:
+            raise UserNotFoundError()
+        if target.role == "owner" and not self._other_active_owner_exists(
+            account.id, target.id
+        ):
+            raise LastOwnerError()
+
+        now = datetime.now(timezone.utc)
+        # Wraps gone: the server can no longer hand this user the AK.
+        target.status = "removed"
+        target.removed_at = now
+        target.wrapped_ak = ""
+        target.nonce_ak = ""
+        target.salt_rc = None
+        target.nonce_rc = None
+        target.wrapped_ak_rc = None
+
+        revoked = 0
+        for dev in self.device_repo.list_by_account(account.id):
+            if dev.user_id == target.id and dev.revoked_at is None:
+                dev.revoked_at = now
+                revoked += 1
+
+        self.audit_repo.log(
+            AuditAction.USER_REMOVED, account.id, device.id,
+            created_at=now, meta=f'{{"name": "{target.name}", "devices_revoked": {revoked}}}',
+        )
+        self.session.commit()
+        return {
+            "id": target.id,
+            "name": target.name,
+            "devices_revoked": revoked,
+            "rotation_required": True,
         }
 
 

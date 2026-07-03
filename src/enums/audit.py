@@ -18,6 +18,8 @@ class AuditAction:
     ENROLL_TOKEN_ISSUED = "enroll_token.issued"
     USER_INVITED = "user.invited"
     USER_JOINED = "user.joined"
+    USER_ROLE_CHANGED = "user.role_changed"
+    USER_REMOVED = "user.removed"
     ROTATE_BEGIN = "rotate.begin"
     ROTATE_BLOB = "rotate.blob"
     ROTATE_COMPLETE = "rotate.complete"

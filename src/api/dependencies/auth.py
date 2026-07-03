@@ -98,3 +98,35 @@ def check_device_scope(device: Device, app_name: str, env_name: str | None = Non
         raise DeviceScopeError()
     if device.allowed_env is not None and env_name is not None and device.allowed_env != env_name:
         raise DeviceScopeError()
+
+
+# --- Roles (spec B.9, Phase 4) -------------------------------------------
+# Roles are authorization over ciphertext, not cryptography (THREAT_MODEL #9).
+# A device with no user row predates the team migration — treated as owner.
+
+from src.core.auth.exceptions import NotAnOwnerError, RoleForbiddenError  # noqa: E402
+from src.core.db.repository.user_repo import (  # noqa: E402
+    UserRepository,
+    get_user_repository,
+)
+from src.models.base import User  # noqa: E402
+
+
+def acting_user(
+    device: Device = Depends(require_device_token),
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> User | None:
+    if device.user_id:
+        return user_repo.get_by_id(device.user_id)
+    return user_repo.owner_of(device.account_id)
+
+
+def require_editor(user: User | None = Depends(acting_user)) -> None:
+    """Editors and owners may write; viewers are read-only."""
+    if user is not None and user.role == "viewer":
+        raise RoleForbiddenError()
+
+
+def require_owner(user: User | None = Depends(acting_user)) -> None:
+    if user is not None and user.role != "owner":
+        raise NotAnOwnerError()

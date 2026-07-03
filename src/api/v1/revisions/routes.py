@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from src.api.dependencies.auth import check_device_scope, require_device_token
+from src.api.dependencies.auth import check_device_scope, require_device_token, require_editor
 from src.api.v1.revisions.views import PushRequest, RollbackRequest
 from src.core.services.revision_service import RevisionService, get_revision_service
 from src.models.base import Device
@@ -15,7 +15,7 @@ from src.models.base import Device
 router = APIRouter(prefix="/apps", tags=["revisions"])
 
 
-@router.post("/{name:path}/envs/{env}/revisions")
+@router.post("/{name:path}/envs/{env}/revisions", dependencies=[Depends(require_editor)])
 def revision_push(
     name: str,
     env: str,
@@ -56,7 +56,7 @@ def revisions_list(
     return JSONResponse(status_code=200, content=result)
 
 
-@router.post("/{name:path}/envs/{env}/rollback")
+@router.post("/{name:path}/envs/{env}/rollback", dependencies=[Depends(require_editor)])
 def rollback(
     name: str,
     env: str,

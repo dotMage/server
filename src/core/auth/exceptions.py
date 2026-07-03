@@ -209,6 +209,11 @@ class NotAnOwnerError(DotMageError):
     message = "This action requires the owner role"
 
 
+class RoleForbiddenError(DotMageError):
+    status_code = 403
+    message = "Your role does not allow this action"
+
+
 class UserExistsError(DotMageError):
     status_code = 409
 
@@ -219,6 +224,16 @@ class UserExistsError(DotMageError):
 class InvitationInvalidError(DotMageError):
     status_code = 404
     message = "Invitation not found, expired or already used"
+
+
+class UserNotFoundError(DotMageError):
+    status_code = 404
+    message = "User not found"
+
+
+class LastOwnerError(DotMageError):
+    status_code = 409
+    message = "Cannot demote or remove the last owner"
 
 
 # --- Rate limit ---

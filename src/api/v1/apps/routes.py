@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from src.api.dependencies.auth import require_device_token
+from src.api.dependencies.auth import require_device_token, require_editor, require_owner
 from src.api.v1.apps.views import CreateAppRequest, CreateEnvRequest
 from src.core.services.app_service import AppService, get_app_service
 from src.models.base import Device
@@ -23,7 +23,7 @@ def apps_list(
     return JSONResponse(status_code=200, content=service.list_apps(device))
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(require_editor)])
 def apps_create(
     body: CreateAppRequest,
     service: Annotated[AppService, Depends(get_app_service)],
@@ -42,7 +42,7 @@ def envs_list(
     return JSONResponse(status_code=200, content=service.list_envs(device, name))
 
 
-@router.post("/{name:path}/envs")
+@router.post("/{name:path}/envs", dependencies=[Depends(require_editor)])
 def envs_create(
     name: str,
     body: CreateEnvRequest,
@@ -53,7 +53,7 @@ def envs_create(
     return JSONResponse(status_code=201, content=result)
 
 
-@router.delete("/{name:path}/envs/{env}")
+@router.delete("/{name:path}/envs/{env}", dependencies=[Depends(require_owner)])
 def envs_delete(
     name: str,
     env: str,
@@ -64,7 +64,7 @@ def envs_delete(
     return JSONResponse(status_code=200, content=result)
 
 
-@router.delete("/{name:path}")
+@router.delete("/{name:path}", dependencies=[Depends(require_owner)])
 def apps_delete(
     name: str,
     service: Annotated[AppService, Depends(get_app_service)],
