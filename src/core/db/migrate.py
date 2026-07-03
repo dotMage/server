@@ -18,9 +18,15 @@ def ensure_owner_user(session: Session) -> None:
     account = session.execute(select(Account)).scalar_one_or_none()
     if account is None:
         return
-    existing = session.execute(
-        select(User).where(User.account_id == account.id)
-    ).scalar_one_or_none()
+    existing = (
+        session.execute(
+            select(User)
+            .where(User.account_id == account.id)
+            .order_by(User.created_at)
+        )
+        .scalars()
+        .first()
+    )
     if existing is None:
         owner = User(
             account_id=account.id,
