@@ -143,3 +143,25 @@ def test_enrolled_device_inherits_issuer_user(bootstrapped_client):
             select(Device).where(Device.name == "second-laptop")
         ).scalar_one()
         assert second.user_id == owner.id
+
+
+def test_migration_is_noop_with_multiple_users(bootstrapped_client):
+    """Regression: startup migration must not crash on a team account."""
+    from src.models.base import User
+
+    client, token, _ = bootstrapped_client
+    with _session() as s:
+        account_id = s.execute(select(Account)).scalar_one().id
+        s.add(
+            User(
+                account_id=account_id,
+                name="second",
+                role="editor",
+                salt="cw==",
+                nonce_ak="bg==",
+                wrapped_ak="dw==",
+            )
+        )
+        s.commit()
+        ensure_owner_user(s)  # must not raise
+        assert len(list(s.execute(select(User)).scalars())) == 2
