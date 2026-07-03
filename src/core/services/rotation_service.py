@@ -29,6 +29,7 @@ from src.core.db.repository.revision_repo import (
     RevisionRepository,
     get_revision_repository,
 )
+from src.core.db.repository.user_repo import UserRepository, get_user_repository
 from src.enums.audit import AuditAction
 from src.models.base import App, Device, Environment, Revision
 
@@ -44,6 +45,7 @@ class RotationService:
         env_repo: EnvironmentRepository,
         revision_repo: RevisionRepository,
         audit_repo: AuditRepository,
+        user_repo: UserRepository,
     ) -> None:
         self.session = session
         self.account_repo = account_repo
@@ -51,6 +53,7 @@ class RotationService:
         self.env_repo = env_repo
         self.revision_repo = revision_repo
         self.audit_repo = audit_repo
+        self.user_repo = user_repo
 
     def _account(self):
         account = self.account_repo.get_account()
@@ -185,6 +188,19 @@ class RotationService:
             account.salt_rc = account.rot_salt_rc
             account.nonce_rc = account.rot_nonce_rc
             account.wrapped_ak_rc = account.rot_wrapped_ak_rc
+        # The rotator's user row cuts over with the account (spec K.0/L.1).
+        user = self.user_repo.get_by_id(device.user_id) if device.user_id else None
+        if user is None:
+            user = self.user_repo.owner_of(account.id)
+        if user is not None:
+            user.key_gen = new_gen
+            user.nonce_ak = account.rot_nonce_ak
+            user.wrapped_ak = account.rot_wrapped_ak
+            if account.rot_wrapped_ak_rc is not None:
+                user.salt_rc = account.rot_salt_rc
+                user.nonce_rc = account.rot_nonce_rc
+                user.wrapped_ak_rc = account.rot_wrapped_ak_rc
+
         account.rotation_new_gen = None
         account.rot_nonce_ak = None
         account.rot_wrapped_ak = None
@@ -213,7 +229,8 @@ def get_rotation_service(
     env_repo: Annotated[EnvironmentRepository, Depends(get_environment_repository)],
     revision_repo: Annotated[RevisionRepository, Depends(get_revision_repository)],
     audit_repo: Annotated[AuditRepository, Depends(get_audit_repository)],
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> RotationService:
     return RotationService(
-        session, account_repo, app_repo, env_repo, revision_repo, audit_repo
+        session, account_repo, app_repo, env_repo, revision_repo, audit_repo, user_repo
     )

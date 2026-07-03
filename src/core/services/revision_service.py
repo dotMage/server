@@ -42,11 +42,18 @@ class RevisionService:
         self.audit_repo = audit_repo
         self.account_repo = account_repo
 
-    def _guard_rotation(self) -> None:
-        """Writes are refused while a key rotation is in progress (spec L.2)."""
+    def _guard_rotation(self) -> int:
+        """Writes are refused while a key rotation is in progress (spec L.2).
+
+        Returns the account's current key generation — new blobs are stamped
+        with it (they are encrypted with the client's current AK).
+        """
         account = self.account_repo.get_account()
-        if account is not None and account.rotation_new_gen is not None:
+        if account is None:
+            return 1
+        if account.rotation_new_gen is not None:
             raise RotationInProgressError()
+        return account.current_key_gen
 
     def _resolve_env(
         self, account_id: str, app_name: str, env_name: str
@@ -69,7 +76,7 @@ class RevisionService:
         content_hash: str | None,
         parent_rev: int,
     ) -> dict:
-        self._guard_rotation()
+        current_gen = self._guard_rotation()
         app = self.app_repo.get_by_account_and_name(device.account_id, app_name)
         if app is None:
             raise AppOrEnvNotFoundError()
@@ -91,6 +98,7 @@ class RevisionService:
             parent_rev=parent_rev if parent_rev > 0 else None,
             device_id=device.id,
             created_at=now,
+            key_gen=current_gen,
         )
         self.revision_repo.create(rev)
 

@@ -10,12 +10,14 @@ from src.api.v1.devices.routes import router as devices_router
 from src.api.v1.health.routes import router as health_router
 from src.api.v1.revisions.routes import router as revisions_router
 from src.api.v1.rotation.routes import router as rotation_router
+from src.api.v1.users.routes import router as users_router
 
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(account_router)
 v1_router.include_router(auth_router)
 v1_router.include_router(apps_router)
 v1_router.include_router(rotation_router)
+v1_router.include_router(users_router)
 v1_router.include_router(revisions_router)
 v1_router.include_router(devices_router)
 v1_router.include_router(audit_router)

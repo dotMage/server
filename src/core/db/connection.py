@@ -29,6 +29,11 @@ def create_db_connection(app: FastAPI) -> None:
     Base.metadata.create_all(bind=eng)
     run_startup_migrations(eng)
 
+    from src.core.db.migrate import ensure_owner_user
+
+    with sf() as session:
+        ensure_owner_user(session)
+
 
 def run_startup_migrations(eng) -> None:
     """Additive column migrations (spec E.9).

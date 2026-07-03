@@ -23,6 +23,7 @@ from src.core.db.connection import get_session
 from src.core.db.repository.account_repo import AccountRepository, get_account_repository
 from src.core.db.repository.audit_repo import AuditRepository, get_audit_repository
 from src.core.db.repository.device_repo import DeviceRepository, get_device_repository
+from src.core.db.repository.user_repo import UserRepository, get_user_repository
 from src.enums.audit import AuditAction
 from src.models.base import Device
 from src.settings import Settings, get_settings
@@ -36,12 +37,14 @@ class AuthService:
         device_repo: DeviceRepository,
         audit_repo: AuditRepository,
         settings: Settings,
+        user_repo: UserRepository,
     ) -> None:
         self.session = session
         self.account_repo = account_repo
         self.device_repo = device_repo
         self.audit_repo = audit_repo
         self.settings = settings
+        self.user_repo = user_repo
 
     def register_device(
         self,
@@ -81,6 +84,9 @@ class AuthService:
         new_raw_token, new_token_hash = generate_device_token()
         new_raw_refresh, new_refresh_hash = generate_refresh_token()
 
+        issuer_user_id = enroll_device.user_id or (
+            (owner := self.user_repo.owner_of(account_id)) and owner.id
+        )
         device = Device(
             account_id=account_id,
             name=device_name,
@@ -89,6 +95,7 @@ class AuthService:
             token_expires_at=now + timedelta(seconds=self.settings.token_ttl_seconds),
             created_at=now,
             last_seen_at=now,
+            user_id=issuer_user_id or None,
         )
         self.device_repo.create(device)
 
@@ -155,6 +162,7 @@ class AuthService:
         new_raw_token, new_token_hash = generate_device_token()
         new_raw_refresh, new_refresh_hash = generate_refresh_token()
 
+        owner = self.user_repo.owner_of(account.id)
         device = Device(
             account_id=account.id,
             name=device_name,
@@ -163,6 +171,7 @@ class AuthService:
             token_expires_at=now + timedelta(seconds=self.settings.token_ttl_seconds),
             created_at=now,
             last_seen_at=now,
+            user_id=owner.id if owner else None,
         )
         self.device_repo.create(device)
 
@@ -185,5 +194,6 @@ def get_auth_service(
     device_repo: Annotated[DeviceRepository, Depends(get_device_repository)],
     audit_repo: Annotated[AuditRepository, Depends(get_audit_repository)],
     settings: Annotated[Settings, Depends(get_settings)],
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> AuthService:
-    return AuthService(session, account_repo, device_repo, audit_repo, settings)
+    return AuthService(session, account_repo, device_repo, audit_repo, settings, user_repo)

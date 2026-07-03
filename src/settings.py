@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     RATE_LIMIT: str = "10/min"
     LOG_LEVEL: str = "info"
     STATIC_DIR: str = "/app/static"
+    # solo | team (spec B.9): team endpoints exist only in team mode.
+    MODE: str = "solo"
+
+    @property
+    def is_team(self) -> bool:
+        return self.MODE.lower() == "team"
 
     @property
     def token_ttl_seconds(self) -> int:

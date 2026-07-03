@@ -152,6 +152,11 @@ class Device(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     allowed_app: Mapped[str | None] = mapped_column(Text, nullable=True)
     allowed_env: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Team mode (spec E.9): which user this device belongs to. NULL only on
+    # rows written before the users migration; backfilled to user #1 (owner).
+    user_id: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("users.id"), nullable=True
+    )
 
     account: Mapped[Account] = relationship(back_populates="devices")
     revisions: Mapped[list[Revision]] = relationship(back_populates="device")
@@ -176,6 +181,65 @@ class AuditLog(Base):
         DateTime, nullable=False, default=_utcnow
     )
     meta: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Team mode (spec E.9): acting user, when known.
+    user_id: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("users.id"), nullable=True
+    )
 
     account: Mapped[Account] = relationship(back_populates="audit_logs")
     device: Mapped[Device | None] = relationship(back_populates="audit_logs")
+
+
+class User(Base):
+    """Team member (spec E.9). A migrated solo account = one owner user."""
+
+    __tablename__ = "users"
+    __table_args__ = (UniqueConstraint("account_id", "name"),)
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=_new_uuid)
+    account_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("accounts.id"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[str] = mapped_column(Text, nullable=False, default="owner")
+    salt: Mapped[str] = mapped_column(Text, nullable=False)
+    argon_memory: Mapped[int] = mapped_column(Integer, nullable=False, default=65536)
+    argon_iterations: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    argon_parallelism: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    argon_version: Mapped[int] = mapped_column(Integer, nullable=False, default=19)
+    nonce_ak: Mapped[str] = mapped_column(Text, nullable=False)
+    wrapped_ak: Mapped[str] = mapped_column(Text, nullable=False)
+    salt_rc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    nonce_rc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    wrapped_ak_rc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    key_gen: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=_utcnow
+    )
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class Invitation(Base):
+    """Pending team invitation with the sealed AK (spec K.1/E.9)."""
+
+    __tablename__ = "invitations"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=_new_uuid)
+    account_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("accounts.id"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[str] = mapped_column(Text, nullable=False, default="editor")
+    redeem_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    sealed_ak: Mapped[str | None] = mapped_column(Text, nullable=True)
+    nonce_inv: Mapped[str | None] = mapped_column(Text, nullable=True)
+    key_gen: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="pending")
+    created_by: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("users.id"), nullable=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=_utcnow
+    )

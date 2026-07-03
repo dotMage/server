@@ -154,3 +154,34 @@ def test_reads_work_during_rotation(bootstrapped_client):
     )
     assert r.status_code == 200
     assert r.json()["key_gen"] == 1
+
+
+def test_push_after_rotation_stamps_new_generation(bootstrapped_client):
+    """Regression: new blobs after a rotation carry the current generation —
+    a default of 1 would poison the NEXT rotation's walk."""
+    client, token, _ = bootstrapped_client
+    _seed_app(client, token, revs=1)
+    assert _begin(client, token).status_code == 200
+    r = client.put(
+        "/api/v1/apps/myapp/envs/dev/revisions/1/blob",
+        json={"blob": "v1:bjI=:YzI=", "key_gen": 2},
+        headers=_auth(token),
+    )
+    assert r.status_code == 200
+    assert (
+        client.post(
+            "/api/v1/account/rotate/complete", headers=_auth(token)
+        ).status_code
+        == 200
+    )
+
+    r = client.post(
+        "/api/v1/apps/myapp/envs/dev/revisions",
+        json={"blob": "v1:bjM=:YzM=", "content_hash": None, "parent_rev": 1},
+        headers=_auth(token),
+    )
+    assert r.status_code == 201
+    pull = client.get(
+        "/api/v1/apps/myapp/envs/dev/revisions/2", headers=_auth(token)
+    ).json()
+    assert pull["key_gen"] == 2
