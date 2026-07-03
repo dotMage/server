@@ -156,6 +156,33 @@ class AppOrEnvNotFoundError(DotMageError):
     message = "App or environment not found"
 
 
+# --- Rotation (spec L) ---
+
+
+class RotationInProgressError(DotMageError):
+    status_code = 409
+    message = "Key rotation in progress — retry after it completes"
+
+
+class RotationConflictError(DotMageError):
+    status_code = 409
+
+    def __init__(self, detail: str) -> None:
+        self.message = f"Rotation conflict: {detail}"
+
+
+class RotationNotActiveError(DotMageError):
+    status_code = 405
+    message = "Blob replacement is only allowed during key rotation"
+
+
+class RotationIncompleteError(DotMageError):
+    status_code = 409
+
+    def __init__(self, stale: int) -> None:
+        self.message = f"Rotation incomplete: {stale} revision(s) still on the old key"
+
+
 # --- Device ---
 
 

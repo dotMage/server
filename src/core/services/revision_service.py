@@ -13,8 +13,10 @@ from src.core.auth.exceptions import (
     BadRevisionError,
     RevisionConflictError,
     RevisionNotFoundError,
+    RotationInProgressError,
 )
 from src.core.db.connection import get_session
+from src.core.db.repository.account_repo import AccountRepository, get_account_repository
 from src.core.db.repository.app_repo import AppRepository, get_app_repository
 from src.core.db.repository.audit_repo import AuditRepository, get_audit_repository
 from src.core.db.repository.environment_repo import EnvironmentRepository, get_environment_repository
@@ -31,12 +33,20 @@ class RevisionService:
         env_repo: EnvironmentRepository,
         revision_repo: RevisionRepository,
         audit_repo: AuditRepository,
+        account_repo: AccountRepository,
     ) -> None:
         self.session = session
         self.app_repo = app_repo
         self.env_repo = env_repo
         self.revision_repo = revision_repo
         self.audit_repo = audit_repo
+        self.account_repo = account_repo
+
+    def _guard_rotation(self) -> None:
+        """Writes are refused while a key rotation is in progress (spec L.2)."""
+        account = self.account_repo.get_account()
+        if account is not None and account.rotation_new_gen is not None:
+            raise RotationInProgressError()
 
     def _resolve_env(
         self, account_id: str, app_name: str, env_name: str
@@ -59,6 +69,7 @@ class RevisionService:
         content_hash: str | None,
         parent_rev: int,
     ) -> dict:
+        self._guard_rotation()
         app = self.app_repo.get_by_account_and_name(device.account_id, app_name)
         if app is None:
             raise AppOrEnvNotFoundError()
@@ -138,6 +149,7 @@ class RevisionService:
             "device_id": revision.device_id,
             "parent_rev": revision.parent_rev,
             "rollback_of": revision.rollback_of,
+            "key_gen": revision.key_gen,
         }
 
     def list_revisions(
@@ -161,6 +173,7 @@ class RevisionService:
     def rollback(
         self, device: Device, app_name: str, env_name: str, to_rev: int
     ) -> dict:
+        self._guard_rotation()
         app, environment = self._resolve_env(device.account_id, app_name, env_name)
 
         source = self.revision_repo.get_by_env_and_number(environment.id, to_rev)
@@ -179,6 +192,7 @@ class RevisionService:
             device_id=device.id,
             rollback_of=to_rev,
             created_at=now,
+            key_gen=source.key_gen,
         )
         self.revision_repo.create(rev)
 
@@ -205,5 +219,8 @@ def get_revision_service(
     env_repo: Annotated[EnvironmentRepository, Depends(get_environment_repository)],
     revision_repo: Annotated[RevisionRepository, Depends(get_revision_repository)],
     audit_repo: Annotated[AuditRepository, Depends(get_audit_repository)],
+    account_repo: Annotated[AccountRepository, Depends(get_account_repository)],
 ) -> RevisionService:
-    return RevisionService(session, app_repo, env_repo, revision_repo, audit_repo)
+    return RevisionService(
+        session, app_repo, env_repo, revision_repo, audit_repo, account_repo
+    )

@@ -129,6 +129,7 @@ class AccountService:
             "salt_rc": account.salt_rc,
             "nonce_rc": account.nonce_rc,
             "wrapped_ak_rc": account.wrapped_ak_rc,
+            "key_gen": account.current_key_gen,
         }
 
     def patch_keys(

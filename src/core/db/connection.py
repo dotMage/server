@@ -27,6 +27,37 @@ def create_db_connection(app: FastAPI) -> None:
     from src.models.base import Base
 
     Base.metadata.create_all(bind=eng)
+    run_startup_migrations(eng)
+
+
+def run_startup_migrations(eng) -> None:
+    """Additive column migrations (spec E.9).
+
+    create_all() creates missing tables but never adds columns to existing
+    ones. Compare live schema against the models and ALTER in the gaps —
+    idempotent, additive-only (new columns are nullable or have a default).
+    """
+    from sqlalchemy import inspect, text
+
+    from src.models.base import Base
+
+    inspector = inspect(eng)
+    with eng.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if table.name not in inspector.get_table_names():
+                continue
+            existing = {c["name"] for c in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                ddl = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {column.type.compile(eng.dialect)}"
+                if column.default is not None and getattr(column.default, "arg", None) is not None:
+                    arg = column.default.arg
+                    if isinstance(arg, (int, float)):
+                        ddl += f" DEFAULT {arg}"
+                    elif isinstance(arg, str):
+                        ddl += f" DEFAULT '{arg}'"
+                conn.execute(text(ddl))
 
 
 def shutdown_db_connection(app: FastAPI) -> None:

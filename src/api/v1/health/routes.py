@@ -14,4 +14,9 @@ def health(
     account_repo: AccountRepository = Depends(get_account_repository),
 ) -> dict:
     acct = account_repo.get_account()
-    return {"status": "ok", "version": "0.1.0", "account_exists": acct is not None}
+    return {
+        "status": "ok",
+        "version": "0.2.0",
+        "account_exists": acct is not None,
+        "features": ["rotation"],
+    }

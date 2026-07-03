@@ -44,6 +44,15 @@ class Account(Base):
     wrapped_ak_rc: Mapped[str | None] = mapped_column(Text, nullable=True)
     bootstrap_secret_hash: Mapped[str] = mapped_column(Text, nullable=False)
     bootstrap_used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # AK rotation (spec L): key generation + in-progress state. The rot_* fields
+    # hold the rotator's pending wraps for the new generation until `complete`.
+    current_key_gen: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    rotation_new_gen: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rot_nonce_ak: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rot_wrapped_ak: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rot_salt_rc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rot_nonce_rc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rot_wrapped_ak_rc: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=_utcnow
     )
@@ -118,6 +127,8 @@ class Revision(Base):
         Text, ForeignKey("devices.id"), nullable=False
     )
     rollback_of: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # AK generation this blob is encrypted with (spec L.0).
+    key_gen: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     environment: Mapped[Environment] = relationship(back_populates="revisions")
     device: Mapped[Device] = relationship(back_populates="revisions")
