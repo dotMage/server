@@ -14,6 +14,12 @@ The API contract is versioned by URL (`/api/v1`) — breaking it requires `/api/
   of existing accounts (owner user backfilled, devices linked), `GET /whoami`,
   `DOTMAGE_MODE=solo|team` (default solo — team endpoints hidden).
 - Startup schema migrator: additive `ALTER TABLE` for new columns (no alembic needed).
+- Team invitations (spec K): `POST /users/invite`, two-step redeem/complete with sealed
+  AK the server cannot open; one-time tokens with TTL.
+- Role enforcement on every write: owner/editor/viewer; last-owner protection;
+  `PATCH/DELETE /users/{id}` for role changes and offboarding (wraps dropped, devices
+  revoked, rotation flagged as required).
+- Audit log attributes every action to a user; `GET /audit` returns the user name.
 
 ### Changed
 
