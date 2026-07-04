@@ -56,12 +56,13 @@ def run_startup_migrations(eng) -> None:
                 if column.name in existing:
                     continue
                 ddl = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {column.type.compile(eng.dialect)}"
-                if column.default is not None and getattr(column.default, "arg", None) is not None:
-                    arg = column.default.arg
-                    if isinstance(arg, (int, float)):
-                        ddl += f" DEFAULT {arg}"
-                    elif isinstance(arg, str):
-                        ddl += f" DEFAULT '{arg}'"
+                arg = getattr(column.default, "arg", None)
+                if isinstance(arg, (int, float)) and not isinstance(arg, bool):
+                    ddl += f" DEFAULT {arg}"
+                elif isinstance(arg, bool):
+                    ddl += f" DEFAULT {int(arg)}"
+                elif isinstance(arg, str):
+                    ddl += f" DEFAULT '{arg}'"
                 conn.execute(text(ddl))
 
 
