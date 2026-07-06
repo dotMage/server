@@ -29,7 +29,13 @@ The API contract is versioned by URL (`/api/v1`) — breaking it requires `/api/
 
 ## 2026-07-06
 
+### Fixed
+- Enrollment tokens (incl. the web-admin login token) now carry the issuing user's
+  identity: a token minted by an editor enrolls a device as that editor, not the owner.
+
 ### Added
+- `install.sh` interactively asks for mode (solo/team) and server name at deploy
+  (falls back to `DOTMAGE_MODE` / `DOTMAGE_SERVER_NAME` env vars when set).
 - `DOTMAGE_SERVER_NAME` — optional display name advertised in `/health`; clients adopt it
   as the default server name so members don't have to rename after joining.
 

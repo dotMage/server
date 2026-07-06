@@ -95,6 +95,9 @@ class DeviceService:
             token_hash=token_hash,
             token_expires_at=now + timedelta(seconds=ttl_secs),
             created_at=now,
+            # Carry the caller's identity so the device enrolled with this token
+            # (e.g. the web admin login) belongs to the same user, not the owner.
+            user_id=device.user_id,
         )
         self.device_repo.create(enroll_device)
 
@@ -129,6 +132,7 @@ class DeviceService:
             token_expires_at=now + timedelta(seconds=ttl_secs),
             created_at=now,
             last_seen_at=now,
+            user_id=device.user_id,
             allowed_app=app,
             allowed_env=env,
         )

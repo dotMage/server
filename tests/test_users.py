@@ -165,3 +165,38 @@ def test_migration_is_noop_with_multiple_users(bootstrapped_client):
         s.commit()
         ensure_owner_user(s)  # must not raise
         assert len(list(s.execute(select(User)).scalars())) == 2
+
+
+def test_web_enroll_token_keeps_inviter_identity(bootstrapped_client, monkeypatch):
+    """A token minted by a member enrolls a device under THAT member, not owner
+    (regression: web admin showed 'owner' for a token minted by an editor)."""
+    from src.settings import get_settings
+    from src.models.base import User
+    monkeypatch.setattr(get_settings(), "MODE", "team")
+    client, owner_token, _ = bootstrapped_client
+
+    # owner invites + editor joins
+    import hashlib
+    inv = client.post("/api/v1/users/invite", json={
+        "name": "vsky", "role": "editor", "ttl": "24h",
+        "sealed_ak": "c2VhbGVk", "nonce_inv": "bg==",
+        "redeem_hash": hashlib.sha256(b"s").hexdigest(),
+    }, headers=_auth(owner_token)).json()
+    joined = client.post("/api/v1/invitations/complete", json={
+        "invitation_id": inv["invitation_id"], "redeem_secret": "s",
+        "device_name": "vsky-laptop", "salt": "a2s=", "argon_memory": 65536,
+        "argon_iterations": 3, "argon_parallelism": 1, "argon_version": 19,
+        "nonce_ak": "bg==", "wrapped_ak": "dw==",
+    }).json()
+    vsky_token = joined["device_token"]
+
+    # vsky mints a web-admin enrollment token, web exchanges it
+    et = client.post("/api/v1/devices/enroll-token",
+                     json={"name": "web-admin", "ttl": "5m"},
+                     headers=_auth(vsky_token)).json()["token"]
+    web = client.post("/api/v1/auth/device", json={"device_name": "web-admin"},
+                      headers={"Authorization": f"Bearer {et}"}).json()
+
+    me = client.get("/api/v1/whoami", headers=_auth(web["device_token"])).json()
+    assert me["name"] == "vsky"
+    assert me["role"] == "editor"

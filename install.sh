@@ -13,6 +13,24 @@ printf "\n"
 printf "  \e[36m.  dotMage installer  .\e[0m\n"
 printf "\n"
 
+# Interactive prompts — work even under `curl ... | bash` by reading the
+# terminal directly (/dev/tty). Env vars, when set, skip the prompt.
+if [ -t 0 ] || [ -e /dev/tty ]; then
+    if [ -z "${DOTMAGE_MODE:-}" ]; then
+        printf "  Mode — [1] solo (personal)  [2] team (shared, invites + roles) [1]: "
+        read -r ans < /dev/tty || ans=""
+        [ "$ans" = "2" ] && MODE="team"
+    fi
+    if [ "$MODE" = "team" ] && [ -z "${DOTMAGE_SERVER_NAME:-}" ]; then
+        printf "  Server name shown to clients (e.g. work) [optional]: "
+        read -r ans < /dev/tty || ans=""
+        [ -n "$ans" ] && SERVER_NAME="$ans"
+    fi
+fi
+printf "  Mode: \e[1m%s\e[0m" "$MODE"
+[ -n "$SERVER_NAME" ] && printf "   Name: \e[1m%s\e[0m" "$SERVER_NAME"
+printf "\n\n"
+
 mkdir -p "$DIR"
 cd "$DIR"
 
