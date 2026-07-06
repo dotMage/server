@@ -6,6 +6,8 @@ PORT_WEB=9471
 DIR="dotmage"
 # solo (default) or team: curl ... | DOTMAGE_MODE=team bash
 MODE="${DOTMAGE_MODE:-solo}"
+# optional display name clients adopt: curl ... | DOTMAGE_SERVER_NAME=work bash
+SERVER_NAME="${DOTMAGE_SERVER_NAME:-}"
 
 printf "\n"
 printf "  \e[36m.  dotMage installer  .\e[0m\n"
@@ -26,6 +28,7 @@ services:
       DOTMAGE_REFRESH_TTL: "30d"
       DOTMAGE_LOG_LEVEL: "info"
       DOTMAGE_MODE: "${MODE}"
+      DOTMAGE_SERVER_NAME: "${SERVER_NAME}"
     volumes:
       - dotmage-data:/data
     ports:

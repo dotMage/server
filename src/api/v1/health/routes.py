@@ -19,9 +19,12 @@ def health(
     features = ["rotation"]
     if settings.is_team:
         features.append("team")
-    return {
+    body = {
         "status": "ok",
         "version": "0.2.0",
         "account_exists": acct is not None,
         "features": features,
     }
+    if settings.SERVER_NAME:
+        body["server_name"] = settings.SERVER_NAME
+    return body

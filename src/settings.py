@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     STATIC_DIR: str = "/app/static"
     # solo | team (spec B.9): team endpoints exist only in team mode.
     MODE: str = "solo"
+    # Optional display name advertised in /health; clients adopt it as the
+    # default server name so members don't have to `dmage server rename`.
+    SERVER_NAME: str = ""
 
     @property
     def is_team(self) -> bool:
