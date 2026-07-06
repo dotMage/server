@@ -5,10 +5,19 @@ Self-hosted, E2E-encrypted `.env` secret manager. The server stores only encrypt
 ## Deploy (one command)
 
 ```bash
+# solo (default) — personal secrets vault
 curl -fsSL https://raw.githubusercontent.com/dotMage/server/main/install.sh | bash
+
+# team — same installer, one flag: enables users, invitations and roles
+curl -fsSL https://raw.githubusercontent.com/dotMage/server/main/install.sh | DOTMAGE_MODE=team bash
 ```
 
 That's it. Downloads the Docker image, creates `docker-compose.yml`, starts the server on port 8000, prints the bootstrap secret.
+
+Upgrading an existing solo server to team: add `DOTMAGE_MODE: "team"` to the
+`environment:` block in `docker-compose.yml` and run `docker compose up -d`. Existing
+accounts migrate automatically (the owner becomes user #1); switching back to solo is
+refused while more than one user exists.
 
 Requires only Docker. No git, no Node.js, no Python, no Rust.
 
