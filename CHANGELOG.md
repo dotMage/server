@@ -27,6 +27,12 @@ The API contract is versioned by URL (`/api/v1`) — breaking it requires `/api/
 
 ### Security
 
+## 2026-07-06
+
+### Added
+- `DOTMAGE_SERVER_NAME` — optional display name advertised in `/health`; clients adopt it
+  as the default server name so members don't have to rename after joining.
+
 ## 2026-07-01
 
 ### Added
