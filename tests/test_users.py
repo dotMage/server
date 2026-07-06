@@ -147,7 +147,6 @@ def test_enrolled_device_inherits_issuer_user(bootstrapped_client):
 
 def test_migration_is_noop_with_multiple_users(bootstrapped_client):
     """Regression: startup migration must not crash on a team account."""
-    from src.models.base import User
 
     client, token, _ = bootstrapped_client
     with _session() as s:
@@ -171,7 +170,6 @@ def test_web_enroll_token_keeps_inviter_identity(bootstrapped_client, monkeypatc
     """A token minted by a member enrolls a device under THAT member, not owner
     (regression: web admin showed 'owner' for a token minted by an editor)."""
     from src.settings import get_settings
-    from src.models.base import User
     monkeypatch.setattr(get_settings(), "MODE", "team")
     client, owner_token, _ = bootstrapped_client
 
