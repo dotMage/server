@@ -4,6 +4,8 @@ set -e
 PORT_API=9470
 PORT_WEB=9471
 DIR="dotmage"
+# solo (default) or team: curl ... | DOTMAGE_MODE=team bash
+MODE="${DOTMAGE_MODE:-solo}"
 
 printf "\n"
 printf "  \e[36m.  dotMage installer  .\e[0m\n"
@@ -23,6 +25,7 @@ services:
       DOTMAGE_TOKEN_TTL: "24h"
       DOTMAGE_REFRESH_TTL: "30d"
       DOTMAGE_LOG_LEVEL: "info"
+      DOTMAGE_MODE: "${MODE}"
     volumes:
       - dotmage-data:/data
     ports:
@@ -93,3 +96,9 @@ printf "  2. Authenticate:  dmage auth --server %s\n" "$API_URL"
 printf "  3. Push secrets:  cd your-project && dmage init myapp\n"
 printf "  4. Admin panel:   %s\n" "$WEB_URL"
 printf "\n"
+
+if [ "$MODE" = "team" ]; then
+    printf "\n"
+    printf "  Team mode is ON. After dmage auth, invite members:\n"
+    printf "    dmage user invite <name> --role editor\n"
+fi
