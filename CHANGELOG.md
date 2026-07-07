@@ -3,7 +3,7 @@
 All notable changes to dotmage-server are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The API contract is versioned by URL (`/api/v1`) — breaking it requires `/api/v2` and a
-[dotmage-spec](https://github.com/dotMage/dotmage-spec) PR, never a silent release.
+PR in the private `dotmage-spec` repo, never a silent release.
 
 ## [Unreleased]
 
