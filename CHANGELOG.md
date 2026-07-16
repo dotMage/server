@@ -26,6 +26,9 @@ PR in the private `dotmage-spec` repo, never a silent release.
   https://dotmage.github.io/docs/#backup; linked from README and the `install.sh` outro.
 
 ### Changed
+- Docker images (`:latest` + `:vX.Y.Z`) publish only from an annotated release tag —
+  pushing to main no longer moves `:latest`, so `install.sh` users get releases, not
+  every merge.
 - `POST /apps/{name}/envs` no longer accepts `copy_from`: a server-side blob copy
   breaks AEAD (ciphertext is bound to `app|env|rev`), so every pull from the copied
   environment failed authentication. Clients that send it get a clear 400 telling

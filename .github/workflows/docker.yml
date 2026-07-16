@@ -1,8 +1,10 @@
 name: Docker
 
+# Images publish only from an annotated release tag — main collects features
+# between releases (see dotmage-spec RELEASING.md). install.sh pulls :latest,
+# so :latest must move only when a release is cut.
 on:
   push:
-    branches: [main]
     tags: ['v*']
 
 permissions:
@@ -36,4 +38,5 @@ jobs:
           push: true
           tags: |
             ghcr.io/dotmage/server:latest
+            ghcr.io/dotmage/server:${{ github.ref_name }}
             ghcr.io/dotmage/server:${{ github.sha }}
