@@ -125,6 +125,8 @@ printf "  1. Download CLI:  https://github.com/dotMage/dotmage/releases\n"
 printf "  2. Authenticate:  dmage auth --server %s\n" "$API_URL"
 printf "  3. Push secrets:  cd your-project && dmage init myapp\n"
 printf "  4. Admin panel:   %s\n" "$WEB_URL"
+printf "  5. Set up backups (E2E: the server cannot recover a lost DB):\n"
+printf "     https://dotmage.github.io/docs/#backup\n"
 printf "\n"
 
 if [ "$MODE" = "team" ]; then

@@ -114,13 +114,19 @@ secrets.example.com {
 }
 ```
 
-## Backup
+## Backup & restore
 
 ```bash
-docker-compose exec server sqlite3 /data/dotmage.db ".backup /data/backup-$(date +%F).db"
+# online backup, safe while the server is running (the image has no sqlite3 CLI — use python)
+docker compose exec server python -c "import sqlite3; s=sqlite3.connect('/data/dotmage.db'); d=sqlite3.connect('/data/backup.db'); s.backup(d); d.close()"
+docker compose cp server:/data/backup.db ./backup-$(date +%F).db
 ```
 
-Losing the database = losing access to all secrets, even with the master password. **Backup is critical.**
+Losing the database = losing access to all secrets, even with the master password — the server
+cannot restore what it never sees (E2E). **Backup is critical.**
+
+Full runbook — cron schedule, backup verification, step-by-step restore:
+[dotmage.github.io/docs/#backup](https://dotmage.github.io/docs/#backup)
 
 ## Web Admin
 

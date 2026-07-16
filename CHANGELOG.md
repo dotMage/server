@@ -21,10 +21,15 @@ PR in the private `dotmage-spec` repo, never a silent release.
   revoked, rotation flagged as required).
 - Audit log attributes every action to a user; `GET /audit` returns the user name.
 - Docker images are multi-arch: `linux/amd64` + `linux/arm64` (Raspberry Pi, ARM VPS).
+- Backup & restore runbook (why E2E means no server-side recovery, cron schedule,
+  `PRAGMA integrity_check`, step-by-step restore) published at
+  https://dotmage.github.io/docs/#backup; linked from README and the `install.sh` outro.
 
 ### Changed
 
 ### Fixed
+- README backup command used the `sqlite3` CLI, which the Docker image doesn't ship —
+  replaced with the working Python online-backup one-liner.
 - `install.sh` now checks Docker daemon access (`docker info`) right after detecting
   compose and exits with a clear message (sudo / `usermod -aG docker` + relogin) instead
   of dying silently mid-install; `up -d` errors are no longer hidden by `2>/dev/null`.
