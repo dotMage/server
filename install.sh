@@ -77,11 +77,20 @@ else
     exit 1
 fi
 
+# Verify we can actually talk to the docker daemon: `docker compose version`
+# succeeds without socket access, but pull/up would fail with permission denied.
+if ! docker info >/dev/null 2>&1; then
+    printf "  \e[31mError:\e[0m cannot connect to the Docker daemon (permission denied?)\n" >&2
+    printf "  Re-run with sudo, or add yourself to the docker group and re-login:\n" >&2
+    printf "    sudo usermod -aG docker %s\n" "$USER" >&2
+    exit 1
+fi
+
 printf "  Pulling images...\n"
 $DC pull -q 2>/dev/null || $DC pull
 
 printf "  Starting services...\n"
-$DC up -d 2>/dev/null
+$DC up -d
 
 # Detect public IP
 PUBLIC_IP=$(curl -s --max-time 3 ifconfig.me 2>/dev/null \

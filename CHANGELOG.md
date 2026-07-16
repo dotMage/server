@@ -24,6 +24,9 @@ PR in the private `dotmage-spec` repo, never a silent release.
 ### Changed
 
 ### Fixed
+- `install.sh` now checks Docker daemon access (`docker info`) right after detecting
+  compose and exits with a clear message (sudo / `usermod -aG docker` + relogin) instead
+  of dying silently mid-install; `up -d` errors are no longer hidden by `2>/dev/null`.
 
 ### Security
 
