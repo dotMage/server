@@ -20,6 +20,7 @@ PR in the private `dotmage-spec` repo, never a silent release.
   `PATCH/DELETE /users/{id}` for role changes and offboarding (wraps dropped, devices
   revoked, rotation flagged as required).
 - Audit log attributes every action to a user; `GET /audit` returns the user name.
+- Docker images are multi-arch: `linux/amd64` + `linux/arm64` (Raspberry Pi, ARM VPS).
 
 ### Changed
 
