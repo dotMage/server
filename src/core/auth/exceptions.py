@@ -115,11 +115,19 @@ class EnvNotFoundError(DotMageError):
         self.message = f"Environment '{name}' not found"
 
 
-class SourceEnvNotFoundError(DotMageError):
-    status_code = 404
+class CopyFromUnsupportedError(DotMageError):
+    """Old clients ask the server to copy a blob into a new environment.
 
-    def __init__(self, name: str) -> None:
-        self.message = f"Source environment '{name}' not found"
+    An E2E server can't do that: ciphertext is AEAD-bound to app|env|rev, so a
+    byte-copy produces a revision that fails authentication on every pull.
+    """
+
+    status_code = 400
+    message = (
+        "copy_from is not supported: the server cannot copy encrypted blobs "
+        "between environments (ciphertext is bound to app|env|rev). "
+        "Upgrade the CLI — newer versions copy client-side: dmage upgrade"
+    )
 
 
 # --- Revision ---

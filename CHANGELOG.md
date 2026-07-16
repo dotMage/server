@@ -26,6 +26,10 @@ PR in the private `dotmage-spec` repo, never a silent release.
   https://dotmage.github.io/docs/#backup; linked from README and the `install.sh` outro.
 
 ### Changed
+- `POST /apps/{name}/envs` no longer accepts `copy_from`: a server-side blob copy
+  breaks AEAD (ciphertext is bound to `app|env|rev`), so every pull from the copied
+  environment failed authentication. Clients that send it get a clear 400 telling
+  them to upgrade; CLI ≥ 2.1 copies client-side (decrypt → re-encrypt → push).
 
 ### Fixed
 - README backup command used the `sqlite3` CLI, which the Docker image doesn't ship —

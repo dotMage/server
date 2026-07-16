@@ -13,7 +13,6 @@ from src.core.auth.exceptions import (
     AppNotFoundError,
     EnvExistsError,
     EnvNotFoundError,
-    SourceEnvNotFoundError,
 )
 from src.core.db.connection import get_session
 from src.core.db.repository.app_repo import AppRepository, get_app_repository
@@ -21,7 +20,7 @@ from src.core.db.repository.audit_repo import AuditRepository, get_audit_reposit
 from src.core.db.repository.environment_repo import EnvironmentRepository, get_environment_repository
 from src.core.db.repository.revision_repo import RevisionRepository, get_revision_repository
 from src.enums.audit import AuditAction
-from src.models.base import App, Device, Environment, Revision
+from src.models.base import App, Device, Environment
 
 
 class AppService:
@@ -110,9 +109,11 @@ class AppService:
             ]
         }
 
-    def create_env(
-        self, device: Device, app_name: str, env_name: str, copy_from: str | None
-    ) -> dict:
+    def create_env(self, device: Device, app_name: str, env_name: str) -> dict:
+        # No copy_from here: the server must never copy blobs between
+        # environments — ciphertext is AEAD-bound to app|env|rev, so a byte
+        # copy is exactly the substitution attack the AAD exists to prevent.
+        # Copying is a client-side decrypt + re-encrypt (CLI >= 2.1).
         app = self.app_repo.get_by_account_and_name(device.account_id, app_name)
         if app is None:
             raise AppNotFoundError(app_name)
@@ -129,27 +130,6 @@ class AppService:
             updated_at=now,
         )
         self.env_repo.create(env)
-
-        if copy_from:
-            source_env = self.env_repo.get_by_app_and_name(app.id, copy_from)
-            if source_env is None:
-                raise SourceEnvNotFoundError(copy_from)
-
-            if source_env.latest_rev > 0:
-                source_rev = self.revision_repo.get_by_env_and_number(
-                    source_env.id, source_env.latest_rev
-                )
-                if source_rev:
-                    new_rev = Revision(
-                        environment_id=env.id,
-                        rev_number=1,
-                        blob=source_rev.blob,
-                        parent_rev=None,
-                        device_id=device.id,
-                        created_at=now,
-                    )
-                    self.revision_repo.create(new_rev)
-                    env.latest_rev = 1
 
         self.audit_repo.log(
             AuditAction.ENV_CREATED, device.account_id, device.id,

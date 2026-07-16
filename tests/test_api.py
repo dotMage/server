@@ -191,6 +191,31 @@ def test_env_crud(bootstrapped_client):
     assert len(resp.json()["environments"]) == 0
 
 
+def test_env_copy_from_rejected(bootstrapped_client):
+    """Server-side blob copy would break AEAD (blob bound to app|env|rev):
+    old clients sending copy_from get a clear 400, not a broken env."""
+    client, token, _ = bootstrapped_client
+    h = auth_header(token)
+
+    client.post("/api/v1/apps", headers=h, json={"name": "cpapp"})
+    client.post("/api/v1/apps/cpapp/envs", headers=h, json={"name": "dev"})
+
+    resp = client.post(
+        "/api/v1/apps/cpapp/envs",
+        headers=h,
+        json={"name": "staging", "copy_from": "dev"},
+    )
+    assert resp.status_code == 400
+    msg = resp.json()["error"]["message"]
+    assert "copy_from" in msg
+    assert "dmage upgrade" in msg
+
+    # No half-created environment left behind
+    resp = client.get("/api/v1/apps/cpapp/envs", headers=h)
+    names = [e["name"] for e in resp.json()["environments"]]
+    assert names == ["dev"]
+
+
 # --- Revisions ---
 
 
