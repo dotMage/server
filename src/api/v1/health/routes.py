@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from src.core.db.repository.account_repo import AccountRepository, get_account_repository
 from src.settings import Settings, get_settings
+from src.version import __version__
 
 router = APIRouter(tags=["health"])
 
@@ -21,10 +22,13 @@ def health(
         features.append("team")
     body = {
         "status": "ok",
-        "version": "2.0.0",
+        "version": __version__,
         "account_exists": acct is not None,
         "features": features,
     }
     if settings.SERVER_NAME:
         body["server_name"] = settings.SERVER_NAME
+    body["web_port"] = settings.WEB_PORT
+    if settings.WEB_URL:
+        body["web_url"] = settings.WEB_URL
     return body

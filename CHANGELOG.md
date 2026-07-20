@@ -8,8 +8,15 @@ PR in the private `dotmage-spec` repo, never a silent release.
 ## [Unreleased]
 
 ### Added
+- `/health` advertises `web_port` (and `web_url` if `DOTMAGE_WEB_URL` is set) so `dmage
+  open` knows where the admin panel lives. Configurable via `DOTMAGE_WEB_PORT` (default
+  9471); the installer wires it automatically.
+- Release automation: tagging `vX.Y.Z` now also publishes a GitHub Release (dev tags are
+  flagged prerelease), giving the admin panel's update banner a source of truth.
 
 ### Changed
+- `/health` `version` is now read from a single source (`src/version.py`), which
+  `pyproject.toml` also derives — one place to bump on release.
 
 ### Fixed
 

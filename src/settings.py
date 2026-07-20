@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     # Optional display name advertised in /health; clients adopt it as the
     # default server name so members don't have to `dmage server rename`.
     SERVER_NAME: str = ""
+    # Where the admin panel is reachable, for `dmage open`. The API server can't
+    # know its own external host, so /health advertises the web PORT and the CLI
+    # combines it with the host it already talks to. WEB_URL is a full override
+    # for reverse-proxy / single-origin deployments (empty = advertise port only).
+    WEB_PORT: int = 9471
+    WEB_URL: str = ""
 
     @property
     def is_team(self) -> bool:

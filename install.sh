@@ -49,6 +49,9 @@ services:
       DOTMAGE_LOG_LEVEL: "info"
       DOTMAGE_MODE: "${MODE}"
       DOTMAGE_SERVER_NAME: "${SERVER_NAME}"
+      # Web admin port, advertised in /health so dmage open knows where the
+      # panel lives (the API server cannot know its own external host).
+      DOTMAGE_WEB_PORT: "${PORT_WEB}"
     volumes:
       - dotmage-data:/data
     ports:

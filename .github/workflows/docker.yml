@@ -51,3 +51,25 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
+
+  # Publish a GitHub Release for the tag so the admin panel's update banner
+  # (and anything reading /releases/latest) has a source of truth. Dev tags
+  # (2.2.0-dev.1) are flagged prerelease, so /releases/latest keeps returning
+  # the newest stable — mirrors the CLI's stable/dev channel split.
+  release:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          PRE=""
+          [[ "$V" == *-* ]] && PRE="--prerelease"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes $PRE

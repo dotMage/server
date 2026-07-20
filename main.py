@@ -14,6 +14,7 @@ from src.api.v1 import health_router, v1_router
 from src.core.auth.exceptions import DotMageError
 from src.core.db.connection import create_db_connection, shutdown_db_connection
 from src.settings import _auto_generate_bootstrap, get_settings
+from src.version import __version__
 
 
 @asynccontextmanager
@@ -25,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="dotMage Server", version="2.0.0", lifespan=lifespan)
+    app = FastAPI(title="dotMage Server", version=__version__, lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
