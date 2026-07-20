@@ -149,7 +149,7 @@ class DeviceService:
             "device_token": raw_token,
             "refresh_token": raw_refresh,
             "device_id": ci_device.id,
-            "expires_at": ci_device.token_expires_at.isoformat() + "Z",
+            "token_expires_at": ci_device.token_expires_at.isoformat() + "Z",
         }
 
 

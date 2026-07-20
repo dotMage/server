@@ -15,10 +15,17 @@ PR in the private `dotmage-spec` repo, never a silent release.
   flagged prerelease), giving the admin panel's update banner a source of truth.
 
 ### Changed
-- `/health` `version` is now read from a single source (`src/version.py`), which
-  `pyproject.toml` also derives — one place to bump on release.
+- `/health` `version` comes from a single source — the `version` in `pyproject.toml`;
+  `src/version.py` reads it from the installed package metadata (one place to bump).
 
 ### Fixed
+- CI token creation failed on the client with `missing field token_expires_at`: the
+  `/devices/ci-token` response used `expires_at` while the other device-auth endpoints
+  (and the client) use `token_expires_at`. The response is now consistent. The scoped
+  device was created regardless, so revoke any leftover `ci:*` devices from failed attempts.
+- Docker build (`pip install .`) failed with `ModuleNotFoundError: No module named 'src'`
+  after the version was made dynamic; the version is a literal in `pyproject.toml` again,
+  so the cached copy-pyproject-then-install layer builds cleanly.
 
 ### Security
 
