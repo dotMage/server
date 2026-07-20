@@ -7,6 +7,8 @@ PR in the private `dotmage-spec` repo, never a silent release.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-07-20
+
 ### Added
 - `/health` advertises `web_port` (and `web_url` if `DOTMAGE_WEB_URL` is set) so `dmage
   open` knows where the admin panel lives. Configurable via `DOTMAGE_WEB_PORT` (default
