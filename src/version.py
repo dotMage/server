@@ -1,10 +1,15 @@
-"""Single source of truth for the server version.
+"""Server version.
 
-Bumped per dotmage-spec/RELEASING.md. `pyproject.toml` derives its version from
-this attribute (dynamic version), and `/health` reports it — so there is exactly
-one place to change on a release.
+Single source is `pyproject.toml` (`[project] version`). At runtime we read it
+from the installed package metadata, so there is exactly one place to bump on a
+release (see the release runbook). `/health` and the FastAPI app report this.
 """
 
 from __future__ import annotations
 
-__version__ = "2.0.0"
+from importlib.metadata import PackageNotFoundError, version as _dist_version
+
+try:
+    __version__ = _dist_version("server")
+except PackageNotFoundError:  # running from source without an install
+    __version__ = "0+unknown"

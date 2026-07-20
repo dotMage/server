@@ -1,6 +1,6 @@
 [project]
 name = "server"
-dynamic = ["version"]
+version = "2.0.0"
 description = "API backend for dotMage E2E-encrypted .env secret manager"
 requires-python = ">=3.12"
 dependencies = [
@@ -23,9 +23,6 @@ dev = [
 [build-system]
 requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.dynamic]
-version = {attr = "src.version.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["src*"]
