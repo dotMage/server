@@ -30,13 +30,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Semver tag fan-out instead of one mutable :latest — users pin what they
+      # want to ride: :2.1.0 (immutable), :2.1, :2 (install.sh default), :dev.
+      - name: Derive image tags
+        id: tags
+        run: |
+          IMAGE=ghcr.io/dotmage/server
+          V="${GITHUB_REF_NAME#v}"                # 2.1.0 | 2.2.0-dev.1
+          if [[ "$V" == *-* ]]; then
+            echo "tags=${IMAGE}:${V},${IMAGE}:dev" >> "$GITHUB_OUTPUT"
+          else
+            MAJOR="${V%%.*}"; MINOR="${V%.*}"
+            echo "tags=${IMAGE}:${V},${IMAGE}:${MINOR},${IMAGE}:${MAJOR},${IMAGE}:latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/dotmage/server:latest
-            ghcr.io/dotmage/server:${{ github.ref_name }}
-            ghcr.io/dotmage/server:${{ github.sha }}
+          tags: ${{ steps.tags.outputs.tags }}

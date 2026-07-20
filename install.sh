@@ -37,7 +37,9 @@ cd "$DIR"
 cat > docker-compose.yml << EOF
 services:
   server:
-    image: ghcr.io/dotmage/server:latest
+    # Pinned to the major: patch/minor updates ride `docker compose pull`,
+    # a breaking major never arrives uninvited.
+    image: ghcr.io/dotmage/server:2
     restart: unless-stopped
     environment:
       DOTMAGE_DB_URL: "sqlite:////data/dotmage.db"
@@ -58,7 +60,7 @@ services:
       retries: 3
 
   web:
-    image: ghcr.io/dotmage/web:latest
+    image: ghcr.io/dotmage/web:2
     restart: unless-stopped
     ports:
       - "${PORT_WEB}:80"

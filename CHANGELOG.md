@@ -8,6 +8,19 @@ PR in the private `dotmage-spec` repo, never a silent release.
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+### Security
+
+## [2.0.0] - 2026-07-16
+
+First tag-based release. The version jumps to 2.0.0 to align the server's major with
+the product version (CLI 2.x) — the install one-liner pins `ghcr.io/dotmage/server:2`.
+
+### Added
 - AK rotation (spec L): key generations per blob, `rotate/begin|status|complete`,
   rotation-gated blob replacement; pushes are refused mid-rotation with a clear 409.
 - Team-of-one user model (spec E.9): `users`/`invitations` tables, automatic migration
