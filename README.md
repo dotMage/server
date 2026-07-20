@@ -4,6 +4,8 @@ Self-hosted, E2E-encrypted `.env` secret manager. The server stores only encrypt
 
 **Footprint:** ~70–100 MB RAM idle for the whole stack (API + web admin; measured on arm64 and amd64), images 68 + 26 MB, all state in one SQLite file. Runs happily on a Raspberry Pi or the cheapest VPS.
 
+Docs: [dotmage.github.io/docs](https://dotmage.github.io/docs/) · Chat: [Telegram](https://t.me/dotMage)
+
 ## Deploy (one command)
 
 ```bash
