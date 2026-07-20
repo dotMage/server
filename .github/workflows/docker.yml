@@ -1,8 +1,8 @@
 name: Docker
 
 # Images publish only from an annotated release tag — main collects features
-# between releases (see dotmage-spec RELEASING.md). install.sh pulls :latest,
-# so :latest must move only when a release is cut.
+# between releases (see dotmage-spec RELEASING.md). install.sh pins the major
+# (:2), so patch/minor updates ride `docker compose pull`.
 on:
   push:
     tags: ['v*']
